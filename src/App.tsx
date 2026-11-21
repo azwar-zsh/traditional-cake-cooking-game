@@ -50,10 +50,15 @@ export default function App() {
   const [lastScoreReport, setLastScoreReport] = useState<ScoreBreakdown | null>(null);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [leaderboardFilter, setLeaderboardFilter] = useState<string>('ALL');
-  const [muted, setMuted] = useState<boolean>(false);
+  const [muted, setMuted] = useState<boolean>(() => {
+    return typeof window !== 'undefined'
+      ? localStorage.getItem('tccg_audio_muted') === 'true'
+      : false;
+  });
 
   useEffect(() => {
     setLeaderboard(getLeaderboardEntries());
+    soundFX.playBGM();
   }, []);
 
   const handleToggleMute = () => {
@@ -64,6 +69,7 @@ export default function App() {
 
   // Start flow from Landing -> Nickname Popup -> Menu Selector
   const handleClickStartPlay = () => {
+    soundFX.playBGM();
     soundFX.playPop(580);
     if (!nickname.trim()) {
       setNicknameInput('');
@@ -84,6 +90,7 @@ export default function App() {
   };
 
   const handleSelectCakeToCook = (cake: CakeRecipe) => {
+    soundFX.playBGM();
     soundFX.playPop(640);
     setSelectedCake(cake);
     setScreen('COOKING_GAME');
@@ -182,10 +189,14 @@ export default function App() {
           <div className="flex items-center gap-3 shrink-0">
             <button
               onClick={handleToggleMute}
-              className="p-2 rounded-lg border border-[#D6C1A0] bg-white hover:bg-[#FEF3C7] text-[#5D4037] transition-colors cursor-pointer"
-              aria-label={muted ? 'Nyalakan suara' : 'Matikan suara'}
+              className="px-2.5 py-1.5 rounded-lg border border-[#D6C1A0] bg-white hover:bg-[#FEF3C7] text-[#5D4037] transition-colors cursor-pointer flex items-center gap-1.5"
+              aria-label={muted ? 'Nyalakan audio dan musik latar' : 'Matikan audio dan musik latar'}
+              title={muted ? 'Audio & Musik Dimatikan (Klik untuk nyalakan)' : 'Audio & Musik Menyala: Sereno Music'}
             >
-              {muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+              {muted ? <VolumeX className="w-4 h-4 text-[#8D6E63]" /> : <Volume2 className="w-4 h-4 text-[#D97706]" />}
+              <span className="text-[11px] font-bold hidden sm:inline">
+                {muted ? 'Audio Mati' : 'Musik On'}
+              </span>
             </button>
             <button
               onClick={() => {
@@ -907,6 +918,10 @@ export default function App() {
                   <li>Presisi & Akurasi Tindakan Mini-Game: 25 Poin</li>
                   <li>Kecepatan Menyelesaikan (Waktu): 15 Poin</li>
                 </ul>
+              </div>
+              <div className="p-3.5 rounded-xl bg-[#FFF9ED] border border-[#E6D5B8]">
+                <span className="font-bold text-[#78350F]">4. Audio & Musik Latar (BGM):</span>{' '}
+                Dilengkapi efek suara arcade saat memasak dan musik pengiring santai bernuansa dapur tradisional (Sereno Music). Kamu dapat menyalakan atau mematikan suara sewaktu-waktu melalui tombol audio di bilah navigasi atas.
               </div>
             </div>
           </div>

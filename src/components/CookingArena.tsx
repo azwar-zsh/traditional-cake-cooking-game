@@ -475,10 +475,14 @@ export const CookingArena: React.FC<CookingArenaProps> = ({
 
             <button
               onClick={onToggleMute}
-              className="p-2 rounded-lg border border-[#D6C1A0] bg-white hover:bg-[#FEF3C7] text-[#5D4037] transition-colors cursor-pointer"
-              aria-label={muted ? 'Nyalakan suara' : 'Matikan suara'}
+              className="px-2.5 py-1.5 rounded-lg border border-[#D6C1A0] bg-white hover:bg-[#FEF3C7] text-[#5D4037] transition-colors cursor-pointer flex items-center gap-1.5"
+              aria-label={muted ? 'Nyalakan audio dan musik latar' : 'Matikan audio dan musik latar'}
+              title={muted ? 'Audio & Musik Dimatikan (Klik untuk nyalakan)' : 'Audio & Musik Menyala: Sereno Music'}
             >
-              {muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+              {muted ? <VolumeX className="w-4 h-4 text-[#8D6E63]" /> : <Volume2 className="w-4 h-4 text-[#D97706]" />}
+              <span className="text-[11px] font-bold hidden md:inline">
+                {muted ? 'Audio Mati' : 'Musik On'}
+              </span>
             </button>
           </div>
         </div>

@@ -1,13 +1,152 @@
-// Procedural Web Audio API Synthesizer for Cooking Mama style arcade feedback
+// Procedural Web Audio API Synthesizer & BGM Audio Manager for Traditional Cake Cooking Game
 
-class SoundEffects {
+class SoundManager {
   private ctx: AudioContext | null = null;
-  public muted: boolean = false;
+  private _muted: boolean = false;
+  private bgmAudio: HTMLAudioElement | null = null;
+  private bgmPlaying: boolean = false;
+  private bgmVolume: number = 0.35;
+  private gestureListenersAttached: boolean = false;
+
+  constructor() {
+    if (typeof window !== 'undefined') {
+      const savedMute = localStorage.getItem('tccg_audio_muted');
+      if (savedMute === 'true') {
+        this._muted = true;
+      }
+      this.initBGM();
+      this.setupAutoPlayListeners();
+    }
+  }
+
+  public get muted(): boolean {
+    return this._muted;
+  }
+
+  public set muted(value: boolean) {
+    this._muted = value;
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('tccg_audio_muted', String(value));
+    }
+    if (value) {
+      this.pauseBGM();
+    } else {
+      this.playBGM();
+      if (this.ctx && this.ctx.state === 'suspended') {
+        this.ctx.resume().catch(() => {});
+      }
+    }
+  }
+
+  private initBGM() {
+    if (typeof window === 'undefined') return;
+    try {
+      const baseUrl = import.meta.env.BASE_URL || '/';
+      const cleanBase = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
+      const audioUrl = `${cleanBase}audio/serenomusic.mp3`;
+
+      this.bgmAudio = new Audio(audioUrl);
+      this.bgmAudio.loop = true;
+      this.bgmAudio.volume = this.bgmVolume;
+      this.bgmAudio.preload = 'auto';
+
+      this.bgmAudio.addEventListener('play', () => {
+        this.bgmPlaying = true;
+      });
+      this.bgmAudio.addEventListener('pause', () => {
+        this.bgmPlaying = false;
+      });
+      this.bgmAudio.addEventListener('ended', () => {
+        this.bgmPlaying = false;
+      });
+    } catch (e) {
+      console.warn('Gagal memuat BGM audio:', e);
+    }
+  }
+
+  private setupAutoPlayListeners() {
+    if (this.gestureListenersAttached || typeof window === 'undefined') return;
+    this.gestureListenersAttached = true;
+
+    const handleFirstGesture = () => {
+      if (!this._muted) {
+        this.playBGM();
+      }
+      if (this.ctx && this.ctx.state === 'suspended') {
+        this.ctx.resume().catch(() => {});
+      }
+      window.removeEventListener('pointerdown', handleFirstGesture);
+      window.removeEventListener('click', handleFirstGesture);
+      window.removeEventListener('keydown', handleFirstGesture);
+      window.removeEventListener('touchstart', handleFirstGesture);
+      this.gestureListenersAttached = false;
+    };
+
+    window.addEventListener('pointerdown', handleFirstGesture, { once: true, passive: true });
+    window.addEventListener('click', handleFirstGesture, { once: true, passive: true });
+    window.addEventListener('keydown', handleFirstGesture, { once: true, passive: true });
+    window.addEventListener('touchstart', handleFirstGesture, { once: true, passive: true });
+  }
+
+  public playBGM() {
+    if (this._muted) return;
+    if (!this.bgmAudio) {
+      this.initBGM();
+    }
+    if (!this.bgmAudio) return;
+
+    this.bgmAudio.volume = this.bgmVolume;
+    const playPromise = this.bgmAudio.play();
+    if (playPromise !== undefined) {
+      playPromise
+        .then(() => {
+          this.bgmPlaying = true;
+        })
+        .catch(() => {
+          // Autoplay blocked by browser policy until user gesture
+          this.bgmPlaying = false;
+        });
+    }
+  }
+
+  public pauseBGM() {
+    if (this.bgmAudio) {
+      this.bgmAudio.pause();
+      this.bgmPlaying = false;
+    }
+  }
+
+  public setMuted(muted: boolean) {
+    this.muted = muted;
+  }
+
+  public toggleMute(): boolean {
+    const next = !this._muted;
+    this.muted = next;
+    return next;
+  }
+
+  public setVolume(vol: number) {
+    this.bgmVolume = Math.max(0, Math.min(1, vol));
+    if (this.bgmAudio) {
+      this.bgmAudio.volume = this.bgmVolume;
+    }
+  }
+
+  public getVolume(): number {
+    return this.bgmVolume;
+  }
+
+  public isBGMPlaying(): boolean {
+    return this.bgmPlaying && !this._muted;
+  }
 
   private getContext(): AudioContext | null {
-    if (this.muted) return null;
+    if (this._muted) return null;
     if (!this.ctx && typeof window !== 'undefined') {
-      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      const AudioCtx =
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       if (AudioCtx) {
         this.ctx = new AudioCtx();
       }
@@ -144,4 +283,4 @@ class SoundEffects {
   }
 }
 
-export const soundFX = new SoundEffects();
+export const soundFX = new SoundManager();
